@@ -34,25 +34,42 @@ float sphere(vec3 p, float r)
 float dist(vec3 p)
 {
     // X軸回転
-    p = rotate(p, 0.2, vec3(1.0, 0.0, 0.0));
+    p = rotate(p, 2.0 * PI * (time * .02), vec3(1.0, 1.0, 1.0));
 
     // Y軸回転
     //p = rotate(p, time, vec3(0.0, 1.0, 0.0));
 
     // 中心座標の移動
-    vec3 s = vec3(0.0, 0.0, 10.0);
+    vec3 s = vec3(0.0, 0.5, 10.0);
+
+    // Fold
+    p = vec3(p.x, mod(p.y, 1.0), p.z);
 
     float d = 100.0;
     for (float i = -25.0; i < 50.0; i++)
     {
-        d = min(d, sphere(p - s - vec3(sin(time * (i + 1.0) / 10.0) * 1.5, 0.0, i / 1.7), 0.15));
+        d = min(d, sphere(p - s - vec3(sin(time * (i + 0.5) / 10.0) * 1.5, 0.0, i / 1.7), 0.05));
     }
 
     return d;
 }
 
+vec3 getNormal(vec3 p)
+{
+    float d = 0.001;
+    return normalize(vec3(
+        dist(p + vec3(d, 0.0, 0.0)) - dist(p + vec3(-d, 0.0, 0.0)),
+        dist(p + vec3(0.0, d, 0.0)) - dist(p + vec3(0.0, -d, 0.0)),
+        dist(p + vec3(0.0, 0.0, d)) - dist(p + vec3(0.0, 0.0, -d))
+    ));;
+}
+
 void main()
 {
+    // ライト
+    vec3 light = normalize(vec3(1.0, 1.0, 1.0));
+    light = rotate(light, 2.0 * PI * (time * 0.1), vec3(sin(mod(time, 2.0 * PI)), 1.0, 1.0));
+
     // 中心座標を原点(0, 0)とし、短辺で正規化する
     vec2 pos = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);
     vec3 ro = vec3(0.0, 0.0, -5.0);
@@ -71,11 +88,12 @@ void main()
 
     if (d < thres)
     {
-        //gl_FragColor = vec4(abs(pos.x) * cos(time), abs(pos.y) * sin(time), sin(time + pos.x) * cos(time + pos.y), 1.0);
-        gl_FragColor = vec4(abs(pos.x), abs(pos.y), 1.0, 1.0);
+        float hoge = dot((getNormal(p)) / 2.0, light);
+        vec4 col = vec4(abs(pos.x), abs(pos.y), 1.0, 1.0);
+        gl_FragColor = vec4(vec3(hoge), 1.0) + col;
     }
     else
     {
-        gl_FragColor = vec4(sin(time)/2.0, sin(time)/2.0, sin(time)/2.0, 1.0);
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
 }
